@@ -114,7 +114,44 @@ docker exec odoo-app odoo -d erptest -i base --stop-after-init --db_host=host.do
   - เป็นปัญหา locale ของ DB ที่เสีย
   - ลบ DB ที่เสีย แล้วสร้างใหม่จาก `template1`
 
-## 8) คำแนะนำใช้งานจริง
+## 8) ตั้ง login / รหัส admin ฉุกเฉิน (ลืมรหัสหรือ init จาก CLI)
+
+รันใน **database Odoo ที่ถูกต้อง** (เช่น `erptest`) ผ่าน psql / pgAdmin
+
+**SQL ที่ต้องการ (login + password ในคำสั่งเดียว):**
+
+```sql
+UPDATE res_users
+SET login = 'admin@admin', password = '1234'
+WHERE id = 2;
+```
+
+**สำคัญ:** ใน Odoo 18 คอลัมน์ `password` เก็บเป็น **แฮช** ไม่ใช่ข้อความตรง การใส่ `'1234'` ใน SQL แบบนี้ **มักทำให้ล็อกอินไม่ได้** ใช้ได้จริงเฉพาะการเปลี่ยน `login` ผ่าน SQL ถ้าต้องการ
+
+แก้เฉพาะอีเมลล็อกอินด้วย SQL (ปลอดภัยกว่า):
+
+```sql
+UPDATE res_users SET login = 'admin@admin' WHERE id = 2;
+```
+
+ตั้งรหัส **`1234`** ให้ user นี้ให้ใช้ **Odoo shell** (แฮชถูกสร้างให้อัตโนมัติ):
+
+```powershell
+docker exec -it odoo-app odoo shell -d erptest --db_host=host.docker.internal --db_port=5432 --db_user=erptest --db_password=2076
+```
+
+ใน Python shell:
+
+```python
+u = env["res.users"].browse(2)
+u.write({"login": "admin@admin", "password": "1234"})
+env.cr.commit()
+exit()
+```
+
+ถ้า admin ไม่ใช่ `id = 2` ให้เช็คก่อน: `SELECT id, login FROM res_users WHERE active ORDER BY id;`
+
+## 9) คำแนะนำใช้งานจริง
 
 - dev: ใช้รหัสง่ายได้ แต่ควรจำให้ได้
 - production: เปลี่ยนรหัสผ่านให้ปลอดภัย, backup DB สม่ำเสมอ, และอย่าใช้ user สิทธิ์สูงเกินจำเป็น
