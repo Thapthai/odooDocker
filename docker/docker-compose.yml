@@ -1,0 +1,23 @@
+# root โปรเจกต์: docker compose --env-file .env -f docker/docker-compose.yml up -d
+# ถ้าอยู่ในโฟลเดอร์ docker/: docker compose --env-file ../.env -f docker-compose.yml up -d
+services:
+  odoo:
+    image: odoo:18.0
+    container_name: odoo-app
+    ports:
+      - "8069:8069"
+      - "8072:8072"
+    environment:
+      HOST: ${POSTGRES_HOST:-host.docker.internal}
+      PORT: ${POSTGRES_PORT:-5432}
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ../addons:/mnt/extra-addons
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  odoo-data:
